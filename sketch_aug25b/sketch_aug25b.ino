@@ -1,16 +1,13 @@
 // program used to control the voltage and current of the psu
 
-const int cs = A0; // Current measurement from opamp 2-4V
-const int ocp = 2; // Overcurrent protection
-const int cA = 3; // Current rotary encoder pin A
+const int vMes = A0; // Voltage measurement from opamp 2-4V
+const int cMes = A1; // Current measurement from opamp 2-4V
+const int cA = 2; // Current rotary encoder pin A
 const int cB = 4; // Current rotary encoder pin B
-const int cButton = 5; // Current rotary encoder button
-const int vA = 6; // Voltage rotary encoder pin A
-const int vB = 7; // Voltage rotary encoder pin B
-const int vButton = 8; // Voltage rotary encoder button
-const int ocLed = 9; // Overcurrent led
-const int pLed = 10; // Power led
-uint16_t value = 0;
+const int vA = 5; // Voltage rotary encoder pin A
+const int vB = 6; // Voltage rotary encoder pin B
+const int ocp = 7; // Overcurrent protection
+const int pLed = 8; // Power led
 uint16_t currentVal = 0;
 uint16_t currentLimit = 0;
 
