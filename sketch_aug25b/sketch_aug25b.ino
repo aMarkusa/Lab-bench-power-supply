@@ -15,7 +15,7 @@ const int pLed = 8;    // Power led
 const int outSw = 12;  // Output switch
 uint16_t currentVal = 0; // Current value read from Cmes. 10-bit
 uint16_t currentLim = 0; // Current limit set by encoder. 10-bit
-uint16_t voltageLim = 0; // Voltage limit set by encoder. 10-bot
+uint16_t voltage = 0; // Voltage limit set by encoder. 10-bit
 uint8_t count = 0;
 
 void setup() {
@@ -34,32 +34,56 @@ void setup() {
   pinMode(vaState, INPUT_PULLUP);
   pinMode(vbState, INPUT_PULLUP);
   Serial.begin(115200);
+  // read states of encoders
+  caState = digitalRead(cA);
+  cbState = digitalRead(cB);
+  vaState = digitalRead(vA);
+  vbState = digitalRead(vB);
+  // set current and voltage to 0
 }
 
-int setCurrentLimit(){  // Function will set the current limit value
-  uint16_t value = analogRead(cA);
-  return value;
+void setCurrentLimit(){  // Function will set the current limit value
+  int newStateA = digitalRead(cA);
+  int newStateB = digitalRead(cB);
+    if(newStateB != caState) {
+      if(newStateB != cbState) 
+        currentLim ++;
+      else
+        currentLim --;
+    }
+  if(currentLim > 255) 
+    currentLim = 255;
 }
 
-int setVoltageLimit(voltageLim){  // Function will set the voltage limit
-  voltageLim = map(voltageLim, 0, 1023, 0, 255);
-  analogWrite(Vset, voltageLim);
-  return 0;
+void setVoltage(){  // Function will set the voltage limit
+  int newStateA = digitalRead(vA);
+  int newStateB = digitalRead(vB);
+    if(newStateB != vaState) {
+      if(newStateB != vbState) 
+        voltage ++;
+      else
+        voltage --;
+    }
+  if(voltage > 255) 
+    voltage = 255;
+  analogWrite(Vset, voltage);
 }
 
 
 
 void loop() {
-  currentLimit = setCurrentLimit(); // Read the current limit
-  currentVal = analogRead(cMes);  // Read the current value           
+  setCurrentLimit(); // Read the current limit
+  setVoltageLimit();
+  currentVal = analogRead(cMes);  // Read the current value 
+  if(currentVal > currentLim){  // Compare the current and the limit
+    digitalWrite(ocp, HIGH); // Limit the current iv val > limit
+  }
+  else{
+    digitalWrite(ocp, LOW);
+  }          
  
 
-  while (currentVal >= currentLimit) {  // Compare value and limit
-    digitalWrite(ocp, HIGH);            // Set ocp high if value >= limit
-    currentVal = analogRead(cMes);
-    currentLimit = setCurrentLimit();
-  
-  }
+ 
 
   digitalWrite(ocp, LOW);
 }
