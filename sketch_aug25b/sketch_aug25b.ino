@@ -12,6 +12,8 @@
 #define pLed 8    // Power led
 #define outSw 12  // Output switch
 
+U8GLIB_SSD1306_128X64(U8G_I2C_OPT_NONE)
+
 // value definition
 int caState;           // Current rotary encoder pin A state
 int cbState;           // Current rotary encoder pin B state
@@ -75,7 +77,12 @@ void setVoltage(){  // Function will set the voltage limit
   analogWrite(Vset, voltage);
 }
 
-float measureVoltage(){
+void draw(){  // used for graphics on oled 
+
+}
+
+
+float measureVoltage(){  // function used to measure output voltage
   voltageMesVal = 15/1023 * analogRead(vMes);  // 10-bit voltage value(1023 = 15V)
   return roundf(voltageMesVal * 100) / 100;  // return voltage with 2 decimals
 }
@@ -93,6 +100,12 @@ void loop() {
   }
   else{
     digitalWrite(ocp, LOW);
-  }          
+  }  
+
+  // picture loop
+  u8g.firstPage();  
+  do {
+    draw();
+  } while( u8g.nextPage() );        
  
 }
