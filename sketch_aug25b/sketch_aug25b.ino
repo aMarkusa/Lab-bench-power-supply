@@ -1,8 +1,11 @@
 // program used to control the voltage and current of the psu
 
+#include <U8glib.h>
+
+
 // pin definition
-#define vMes A0   // Voltage measurement from opamp 2-4V
-#define cMes A1   // Current measurement from opamp 2-4V
+#define vMes 14   // Voltage measurement from opamp 2-4V
+#define cMes 15   // Current measurement from opamp 2-4V
 #define Vset 3    // voltage set signal going to LT1085
 #define cA 2      // Current rotary encoder pin A
 #define cB 4      // Current rotary encoder pin B
@@ -10,9 +13,9 @@
 #define vB 6      // Voltage rotary encoder pin B
 #define ocp 7     // Overcurrent protection
 #define pLed 8    // Power led
-#define outSw 12  // Output switch
+#define outSw 11  // Output switch
 
-U8GLIB_SSD1306_128X64(U8G_I2C_OPT_NONE)
+//U8GLIB_SSD1306_128X64(U8G_I2C_OPT_NONE)
 
 // value definition
 int caState;           // Current rotary encoder pin A state
@@ -20,26 +23,22 @@ int cbState;           // Current rotary encoder pin B state
 int vaState;           // Voltage rotary encoder pin A state
 int vbState;           // Voltage rotary encoder pin B state
 uint16_t currentVal = 0; // Current value read from Cmes. 10-bit
-uint16_t currentLim = 0; // Current limit set by encoder. 10-bit
-uint16_t voltage = 0; // Voltage limit set by encoder. 10-bit
-uint16_t voltageMesVal = 0;  // Measured voltage value from voltage divider 
-uint8_t count = 0;
+int16_t currentLim = 0; // Current limit set by encoder. 10-bit
+int16_t voltageVal = 0;  // Measured voltage value from voltage divider 
+float voltage = 0.0; // 0-15V
+float current = 0.0; // 0-1A
 
 void setup() {
   // pinmodes of every I/O
   pinMode(cMes, INPUT);
   pinMode(vMes, INPUT);
-  pinMode(cA, INPUT);
-  pinMode(cB, INPUT);
-  pinMode(vA, INPUT);
-  pinMode(vB, INPUT);
+  pinMode(cA, INPUT_PULLUP);
+  pinMode(cB, INPUT_PULLUP);
+  pinMode(vA, INPUT_PULLUP);
+  pinMode(vB, INPUT_PULLUP);
   pinMode(ocp, OUTPUT);
   pinMode(pLed, OUTPUT);
   pinMode(outSw, INPUT);
-  pinMode(caState, INPUT_PULLUP);
-  pinMode(cbState, INPUT_PULLUP);
-  pinMode(vaState, INPUT_PULLUP);
-  pinMode(vbState, INPUT_PULLUP);
 
   // read states of encoders
   caState = digitalRead(cA);
@@ -53,38 +52,62 @@ void setup() {
 void setCurrentLimit(){  // Function will set the current limit value
   int newStateA = digitalRead(cA);
   int newStateB = digitalRead(cB);
-    if(newStateB != caState) {  // If-statement for adjusting currentlim value
-      if(newStateB != cbState) 
-        currentLim ++;
-      else
-        currentLim --;
-    }
-  if(currentLim > 255)  // Value cant be over 255
+  if(newStateA != caState) {  // If-statement for adjusting currentlim value
+    if(newStateA != cbState) 
+      currentLim ++;
+    else
+      currentLim --;
+  }
+  if(currentLim > 255)  // 236 = 1A
     currentLim = 255;
+  if(currentLim < 0)
+    currentLim = 0;
+  caState = newStateA;  // Set the new state of encoder
+  cbState = newStateB;
+
+  //Serial.print(currentLim);
+  //Serial.print("              ");
 }
 
 void setVoltage(){  // Function will set the voltage limit
   int newStateA = digitalRead(vA);
   int newStateB = digitalRead(vB);
-    if(newStateB != vaState) {  // If-statement for adjusting voltage value
-      if(newStateB != vbState) 
-        voltage ++;
-      else
-        voltage --;
-    }
-  if(voltage > 255)  // Value cant be over 255
-    voltage = 255;
-  analogWrite(Vset, voltage);
+  if(newStateA != vaState) {  // If-statement for adjusting currentlim value
+    if(newStateA != vbState) 
+      voltageVal ++;
+    else
+      voltageVal --;
+  }
+  if(voltageVal > 218)  // 218 = 15V
+    voltageVal = 218;
+  if(voltageVal < 0)
+    voltageVal = 0;
+  vaState = newStateA;  // Set the new state of the encoder
+  vbState = newStateB;
+  analogWrite(Vset, voltageVal);  // Write the voltage value to the opamp
+  
+  //Serial.println(voltageVal);
+  //Serial.print(currentLim);
+  //Serial.print("--------");
+}
+
+void measureVoltage(){  // function used to measure output voltage
+  float error = 0;  // mean error
+  voltage = 15.0*analogRead(vMes)/1012.0 + error;  // 0-15V. 1012 = 15V
+  
+  //Serial.println(analogRead(vMes));
+  //Serial.println(voltage,1);
+}
+
+void measureCurrent(){
+  currentVal = analogRead(cMes);  // 10-bit value for the current
+  current = map(currentVal, 0, 1023, 0, 1000);  // Map the value to mA/1000 = A
+  currentVal = map(currentVal, 0, 1023, 0, 255);  // Map for if statement in loop
+  Serial.println(current/1000);
 }
 
 void draw(){  // used for graphics on oled 
 
-}
-
-
-float measureVoltage(){  // function used to measure output voltage
-  voltageMesVal = 15/1023 * analogRead(vMes);  // 10-bit voltage value(1023 = 15V)
-  return roundf(voltageMesVal * 100) / 100;  // return voltage with 2 decimals
 }
 
 void loop() {
@@ -93,8 +116,9 @@ void loop() {
   else
     digitalWrite(pLed, LOW);  // poer led off
   setCurrentLimit(); // Read the current limit
-  setVoltage();  
-  currentVal = analogRead(cMes);  // Read the current value 
+  setVoltage();  // Set the voltage 
+  measureVoltage();  // Measure the voltage
+  measureCurrent();  // Measure the current
   if(currentVal > currentLim){  // Compare the current and the limit
     digitalWrite(ocp, HIGH); // Limit the current if val > limit
   }
@@ -102,10 +126,10 @@ void loop() {
     digitalWrite(ocp, LOW);
   }  
 
-  // picture loop
+  /* picture loop
   u8g.firstPage();  
   do {
     draw();
-  } while( u8g.nextPage() );        
+  } while( u8g.nextPage() );*/ 
  
 }
