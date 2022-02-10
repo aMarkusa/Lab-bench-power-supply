@@ -1,6 +1,17 @@
 // program used to control the voltage and current of the psu
 
-#include <U8glib.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Encoder.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+Encoder knobLeft(6, 5);
 
 
 // pin definition
@@ -15,7 +26,7 @@
 #define pLed 8    // Power led
 #define outSw 11  // Output switch
 
-//U8GLIB_SSD1306_128X64(U8G_I2C_OPT_NONE)
+//U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NONE|U8G_I2C_OPT_DEV_0);
 
 // value definition
 int caState;           // Current rotary encoder pin A state
@@ -46,7 +57,15 @@ void setup() {
   vaState = digitalRead(vA);
   vbState = digitalRead(vB);
 
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  delay(1000);
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+
    Serial.begin(115200);
+
+   
 }
 
 void setCurrentLimit(){  // Function will set the current limit value
@@ -86,8 +105,8 @@ void setVoltage(){  // Function will set the voltage limit
   vbState = newStateB;
   analogWrite(Vset, voltageVal);  // Write the voltage value to the opamp
   
-  //Serial.println(voltageVal);
-  //Serial.print(currentLim);
+  Serial.println(voltageVal);
+  //Serial.println(currentLim);
   //Serial.print("--------");
 }
 
@@ -103,11 +122,14 @@ void measureCurrent(){
   currentVal = analogRead(cMes);  // 10-bit value for the current
   current = map(currentVal, 0, 1023, 0, 1000);  // Map the value to mA/1000 = A
   currentVal = map(currentVal, 0, 1023, 0, 255);  // Map for if statement in loop
-  Serial.println(current/1000);
+  //Serial.println(current/1000);
 }
 
-void draw(){  // used for graphics on oled 
-
+void draw(float v){  // used for graphics on oled 
+  display.setCursor(0, 10);
+  display.print(v);
+  display.display();
+  display.clearDisplay();
 }
 
 void loop() {
@@ -124,12 +146,6 @@ void loop() {
   }
   else{
     digitalWrite(ocp, LOW);
-  }  
-
-  /* picture loop
-  u8g.firstPage();  
-  do {
-    draw();
-  } while( u8g.nextPage() );*/ 
- 
+  } 
+  draw(voltage);
 }
