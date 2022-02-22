@@ -2,16 +2,13 @@
 
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>
-#include <Encoder.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-Encoder knobLeft(6, 5);
 
 
 // pin definition
@@ -57,57 +54,53 @@ void setup() {
   vaState = digitalRead(vA);
   vbState = digitalRead(vB);
 
+  // Setup display
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   delay(1000);
   display.clearDisplay();
-  display.setTextSize(2);
+  display.setTextSize(3);
   display.setTextColor(WHITE);
+
+  // Initialize pin changer interrupts
+  PCICR |= B00000100;  // PCIE2
+  PCMSK2 |= B01110100; // pins 2,4,5,6
 
    Serial.begin(115200);
 
    
 }
 
-void setCurrentLimit(){  // Function will set the current limit value
-  int newStateA = digitalRead(cA);
-  int newStateB = digitalRead(cB);
-  if(newStateA != caState) {  // If-statement for adjusting currentlim value
-    if(newStateA != cbState) 
-      currentLim ++;
-    else
-      currentLim --;
-  }
-  if(currentLim > 255)  // 236 = 1A
-    currentLim = 255;
-  if(currentLim < 0)
-    currentLim = 0;
-  caState = newStateA;  // Set the new state of encoder
-  cbState = newStateB;
+// Interrupt sequence
+ISR (PCINT2_vect){
+  static unsigned long lastInterruptTime = 0;
+  unsigned long interruptTime = millis();
+  if (interruptTime - lastInterruptTime > 2){  // Check if 2ms has passed. Removes encoder "jumping"
+    int newStateAv = digitalRead(vA);  // Reads all the states
+    int newStateBv = digitalRead(vB);
+    int newStateAc = digitalRead(cA);
+    int newStateBc = digitalRead(cB);
+    if(newStateAv != vaState) {  // If statement = 1, adjust voltage
+      if(newStateAv != vbState) 
+        voltageVal ++;
+      else
+        voltageVal --;
+      voltageVal = constrain(voltageVal, 0, 218);  // 218 = 15V
+      analogWrite(Vset, voltageVal);  // Write the voltage value to the opamp
+    }
+    if(newStateAc != caState){  // If statement = 1, adjust current
+      if(newStateAc != cbState) 
+        currentLim ++;
+      else
+        currentLim --;
 
-  //Serial.print(currentLim);
-  //Serial.print("              ");
-}
-
-void setVoltage(){  // Function will set the voltage limit
-  int newStateA = digitalRead(vA);
-  int newStateB = digitalRead(vB);
-  if(newStateA != vaState) {  // If-statement for adjusting currentlim value
-    if(newStateA != vbState) 
-      voltageVal ++;
-    else
-      voltageVal --;
-  }
-  if(voltageVal > 218)  // 218 = 15V
-    voltageVal = 218;
-  if(voltageVal < 0)
-    voltageVal = 0;
-  vaState = newStateA;  // Set the new state of the encoder
-  vbState = newStateB;
-  analogWrite(Vset, voltageVal);  // Write the voltage value to the opamp
-  
-  Serial.println(voltageVal);
-  //Serial.println(currentLim);
-  //Serial.print("--------");
+      currentLim = constrain(currentLim, 0, 255);  // 255 = 1A
+    }
+    caState = newStateAc;  // Set the new states of encoders
+    cbState = newStateBc;
+    vaState = newStateAv; 
+    vbState = newStateBv;
+  } 
+  lastInterruptTime = interruptTime;
 }
 
 void measureVoltage(){  // function used to measure output voltage
@@ -121,24 +114,29 @@ void measureVoltage(){  // function used to measure output voltage
 void measureCurrent(){
   currentVal = analogRead(cMes);  // 10-bit value for the current
   current = map(currentVal, 0, 1023, 0, 1000);  // Map the value to mA/1000 = A
+  current = 1.0*current/1000.0;
   currentVal = map(currentVal, 0, 1023, 0, 255);  // Map for if statement in loop
   //Serial.println(current/1000);
 }
 
-void draw(float v){  // used for graphics on oled 
+void draw(float v, float c){  // used for graphics on oled 
   display.setCursor(0, 10);
   display.print(v);
+  display.println(" V");
+  display.print(c);
+  display.print(" A");
   display.display();
   display.clearDisplay();
 }
 
 void loop() {
+  Serial.println(currentLim);
   if(digitalRead(outSw) == 1)  // Check if output is high
     digitalWrite(pLed, HIGH);  // power led on
   else
     digitalWrite(pLed, LOW);  // poer led off
-  setCurrentLimit(); // Read the current limit
-  setVoltage();  // Set the voltage 
+  //setCurrentLimit(); // Read the current limit
+  //setVoltage();  // Set the voltage 
   measureVoltage();  // Measure the voltage
   measureCurrent();  // Measure the current
   if(currentVal > currentLim){  // Compare the current and the limit
@@ -147,5 +145,6 @@ void loop() {
   else{
     digitalWrite(ocp, LOW);
   } 
-  draw(voltage);
+  //Serial.println(voltageVal);
+  draw(voltage, current);
 }
