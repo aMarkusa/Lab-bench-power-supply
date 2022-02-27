@@ -65,16 +65,14 @@ void setup() {
   PCICR |= B00000100;  // PCIE2
   PCMSK2 |= B01110100; // pins 2,4,5,6
 
-   Serial.begin(115200);
-
-   
+   Serial.begin(115200); 
 }
 
 // Interrupt sequence
 ISR (PCINT2_vect){
   static unsigned long lastInterruptTime = 0;
   unsigned long interruptTime = millis();
-  if (interruptTime - lastInterruptTime > 2){  // Check if 2ms has passed. Removes encoder "jumping"
+  if (interruptTime - lastInterruptTime > 2){  // Check if 2ms has passed. Removes encoder "bouncing"
     int newStateAv = digitalRead(vA);  // Reads all the states
     int newStateBv = digitalRead(vB);
     int newStateAc = digitalRead(cA);
@@ -104,8 +102,8 @@ ISR (PCINT2_vect){
 }
 
 void measureVoltage(){  // function used to measure output voltage
-  float error = 0;  // mean error
-  voltage = 15.0*analogRead(vMes)/1012.0 + error;  // 0-15V. 1012 = 15V
+  //float error = 0;  // mean error
+  voltage = 15.0*analogRead(vMes)/1012.0;  // 0-15V. 1012 = 15V
   
   //Serial.println(analogRead(vMes));
   //Serial.println(voltage,1);
@@ -134,9 +132,7 @@ void loop() {
   if(digitalRead(outSw) == 1)  // Check if output is high
     digitalWrite(pLed, HIGH);  // power led on
   else
-    digitalWrite(pLed, LOW);  // poer led off
-  //setCurrentLimit(); // Read the current limit
-  //setVoltage();  // Set the voltage 
+    digitalWrite(pLed, LOW);  // power led off
   measureVoltage();  // Measure the voltage
   measureCurrent();  // Measure the current
   if(currentVal > currentLim){  // Compare the current and the limit
