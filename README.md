@@ -8,3 +8,4 @@ The current regulation is done by the MCU. The voltage over the shunt-resistor g
 PCB designed in KiCad and orderer from JLCPCB. The dimensions of the PCB were chosen based on the enclosure which was ordered from Amazon.
 
 ###BOM
+BOM found in design file repository.
