@@ -5,7 +5,7 @@ Linear lab bench power supply. This is a 15W constant voltage constant current p
 The current regulation is done by the MCU. The voltage over the shunt resistor gets amplified and read by the MCU. This value is then compared to the current-limit value input by the user. If the measured value >= limit value, the ADJ-pin of the LT1086 gets pulled to GND through a transistor. This reduces the voltage on the output, therefore reducing the current. When the current has dropped below the limit value, the ADJ-pin of the LT1086 is once again controlled normally. This loop goes on, therefore limiting the current.
 
 ### PCB
-PCB designed in KiCad and orderer from JLCPCB. The dimensions of the PCB were chosen based on the enclosure which was ordered from Amazon.
+PCB designed in KiCad and orderer from JLCPCB. The dimensions of the PCB were chosen based on the enclosure which was ordered from Amazon. Design files are found in the project repository.
 
 ### BOM
 BOM is found in design file repository.
