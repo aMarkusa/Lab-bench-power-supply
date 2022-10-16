@@ -13,7 +13,7 @@ The current regulation is done by the MCU. The voltage over the shunt resistor g
 PCB designed in KiCad and orderer from JLCPCB. The dimensions of the PCB were chosen based on the enclosure which was ordered from Amazon. Design files are found in the project repository.
 
 ### BOM
-BOM is found in the [design files](https://github.com/aMarkusa/Lab-bench-power-supply/tree/main/Design%20files) directory. 
+BOM is found in the [design files](https://github.com/aMarkusa/Lab-bench-power-supply-2022/tree/main/Design%20files) directory. 
 
 ### Reflections
 This was the biggest project for me so far. The most challenging parts were designing the PCB and the firmware. I got some help with the PCB design from a more experienced colleague, which enabled me to improve the design in ways I didn't think of. Even though I put a lot of effort into the PCB, there were some traces routed incorrectly, but they were corrected with some wiring. <br />
