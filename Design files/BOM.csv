@@ -4,7 +4,7 @@ Tool:,Eeschema 6.0.2+dfsg-1,,,,,,,,,,,,,
 Generator:,/usr/share/kicad/plugins/bom_csv_grouped_by_value.py,,,,,,,,,,,,,
 Component Count:,95,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,
-Individual Components:,,,,,,,,,,,,,,
+
 ,,,,,,,,,,,,,,
 Item,Qty,Reference(s),Value,LibPart,Footprint,Datasheet,Arrow Part Number,Arrow Price/Stock,Description,Height,Manufacturer_Name,Manufacturer_Part_Number,Mouser Part Number,Mouser Price/Stock
 1,6,"C1, C5, C11, C17, C19, C21",100n,Device:C,Capacitor_SMD:C_0805_2012Metric,~,,,,,,,,
