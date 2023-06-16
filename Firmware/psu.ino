@@ -69,14 +69,16 @@ void setup() {
   PCICR |= B00000100;  // PCIE2
   PCMSK2 |= B01110100; // pins 2,4,5,6
 
-   Serial.begin(115200);
+  Serial.begin(115200);
 
-   display.setCursor(0, 10);
-   display.print("Setting up...");
-   display.display();
-   delay(5000);
-   display.clearDisplay();
-   
+  display.setCursor(0, 10);
+  display.print("Setting up...");
+  display.display();
+  delay(5000);
+  display.clearDisplay();
+
+  analogWrite(Vset, 0);  // set output to 1.25V
+
 }
 
 // Interrupt sequence
